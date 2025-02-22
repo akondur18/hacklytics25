@@ -6,6 +6,7 @@ import openai
 import pandas as pd
 import base64
 import re
+import json
 
 # AWS Configuration
 # AWS_ACCESS_KEY = st.secrets["AWS_ACCESS_KEY"]
@@ -185,20 +186,40 @@ def predict_risk(age, gender, er_status, pr_status, her2_status, tumor_stage, hi
         return "Triple Negative"
     else:
         return "Other Subtype"
-# GenAI Treatment Planner
-def generate_treatment_plan(cancer_type):
-    openai.api_key = st.secrets["OPENAI_KEY"]
-    prompt = f"""Create a detailed breast cancer treatment plan for {cancer_type} type cancer considering:
-    - Latest NCCN guidelines
-    - Targeted therapies
-    - Lifestyle recommendations
-    - Clinical trial options"""
     
+# GenAI Treatment Planner
+def generate_treatment_plan(cancer_type, blood_file):
+    openai.api_key = st.secrets.get("OPENAI_KEY")
+    patient_data = {"cancer type": cancer_type, "blood file": blood_file}
+    prompt = f"""
+        Based on the following patient data and model prediction, decipher the type of breast cancer that the patient has between
+        Infiltrating Ductal Carcinoma, Infiltrating Lobular Carcinoma, Mucinous Carcinoma.
+        
+        Patient Data:
+        {json.dumps(patient_data, indent=2)}
+        
+        Provide a detailed analysis of:
+        1. Key risk factors identified wtih having Infiltrating Ductal Carcinoma, Infiltrating Lobular Carcinoma, or Mucinous Carcinoma
+        2. Confidence in the breast cancer type diagnosis
+        3. Additional tests or information that might be needed based on diagnosis and blood input
+        
+        Provide recommendations for:
+        1. Potential medical treatments / clinical trial options
+        2. Lifestyle modifications, regular monitoring, and follow-up
+        4. Additional specialists to consult
+        
+        Note: Frame this as suggestions to discuss with a healthcare provider.
+        """
+        
     response = openai.ChatCompletion.create(
-        model="gpt-4",
-        messages=[{"role": "user", "content": prompt}]
+        model="gpt-3.5-turbo",
+        messages=[
+            {"role": "system", "content": "You are a medical AI assistant specializing in diagnosis between three types of cancer: Infiltrating Ductal Carcinoma, Infiltrating Lobular Carcinoma, Mucinous Carcinoma and providing treatment. Provide detailed but accessible analysis."},
+            {"role": "user", "content": prompt}
+        ]
     )
-    return response.choices[0].message.content
+        
+    return response.choices[0].message["content"]
 
 # AWS Functions
 def save_to_dynamo(record):
@@ -252,3 +273,16 @@ else:
 
 # Aditi's Dashboard (Separate dashboard.py)
 # Would query DynamoDB and create visualizations
+
+# main.py (add this to the end of the file)
+
+# Sidebar Navigation
+st.sidebar.title("Navigation")
+page = st.sidebar.radio("Go to", ["Input Form", "Dashboard"])
+
+if page == "Input Form":
+    input_form()
+elif page == "Dashboard":
+    # Import and run the dashboard
+    from dashboard import dashboard
+    dashboard()
