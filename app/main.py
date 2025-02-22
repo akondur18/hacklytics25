@@ -252,3 +252,16 @@ else:
 
 # Aditi's Dashboard (Separate dashboard.py)
 # Would query DynamoDB and create visualizations
+
+# main.py (add this to the end of the file)
+
+# Sidebar Navigation
+st.sidebar.title("Navigation")
+page = st.sidebar.radio("Go to", ["Input Form", "Dashboard"])
+
+if page == "Input Form":
+    input_form()
+elif page == "Dashboard":
+    # Import and run the dashboard
+    from dashboard import dashboard
+    dashboard()
