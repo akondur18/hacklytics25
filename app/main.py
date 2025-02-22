@@ -5,6 +5,7 @@ from datetime import datetime
 import openai
 import pandas as pd
 import base64
+import re
 
 # AWS Configuration
 # AWS_ACCESS_KEY = st.secrets["AWS_ACCESS_KEY"]
@@ -51,47 +52,139 @@ def auth_page():
                 create_user(new_email, new_pass)
                 st.success("Account created! Please login")
 
-# Medical History Form
+# medical form 
 def input_form():
-    st.title("Patient Intake Form 🩺")
+    st.title("Breast Cancer Risk Assessment Form 🩺")
     
     with st.form("medical_history"):
         st.header("Personal Information")
-        age = st.number_input("Age", 5, 100)
+        age = st.number_input("Age", min_value=18, max_value=100, value=40)
         gender = st.radio("Gender", ["Female", "Male", "Other"])
         
-        st.header("Medical History")
+        st.header("Clinical Biomarkers (from Blood Test)")
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            er_status = st.radio("ER Status", ["Positive", "Negative"])
+        with col2:
+            pr_status = st.radio("PR Status", ["Positive", "Negative"])
+        with col3:
+            her2_status = st.radio("HER2 Status", ["Positive", "Negative"])
+            
+        st.header("Tumor Characteristics")
+        tumor_stage = st.selectbox("Tumor Stage", ["I", "II", "III"])
+        histology = st.selectbox("Histology Type", [
+            "Infiltrating Ductal Carcinoma", 
+            "Infiltrating Lobular Carcinoma",
+            "Mucinous Carcinoma"
+        ])
+        
+        st.header("Additional Risk Factors")
         family_history = st.checkbox("Family history of breast cancer")
-        pregnancies = st.number_input("Number of pregnancies", 0, 10)
-        hormonal_therapy = st.checkbox("Previous hormonal therapy")
+        menarche_age = st.number_input("Age at first menstruation", 8, 20, 12)
+        menopause_status = st.checkbox("Post-menopausal")
         
-        st.header("Blood Test Results")
-        blood_file = st.file_uploader("Upload blood test (TXT)", type="txt")
+        st.header("Blood Test Upload")
+        blood_file = st.file_uploader("Upload formatted blood test (TXT)", type="txt", 
+                    help="Upload file with format:\nER: Positive\nPR: Negative\nHER2: Positive")
         
-        submitted = st.form_submit_button("Submit")
+        submitted = st.form_submit_button("Analyze Risk")
+        
         if submitted:
-            # Store in AWS
-            # save_to_dynamo({
-            #     "email": st.session_state.user_email,
-            #     "age": age,
-            #     "gender": gender,
-            #     "family_history": family_history,
-            #     "blood_test": process_bloodtest(blood_file),
-            #     "timestamp": datetime.now().isoformat()
-            # })
+            # Process blood test or use manual inputs
+            if blood_file:
+                biomarkers = parse_bloodtest(blood_file)
+            else:
+                biomarkers = {
+                    'ER': er_status,
+                    'PR': pr_status,
+                    'HER2': her2_status
+                }
             
-            # Get ML Prediction
-            cancer_type = get_ml_prediction(age, gender, family_history, blood_file)
-            
-            # Generate Treatment Plan
-            treatment = generate_treatment_plan(cancer_type)
-            
+            # Get prediction
+            prediction = predict_risk(
+                age=age,
+                gender=gender,
+                er_status=biomarkers['ER'],
+                pr_status=biomarkers['PR'],
+                her2_status=biomarkers['HER2'],
+                tumor_stage=tumor_stage,
+                histology=histology,
+                family_history=family_history
+            )
+                        
             st.session_state.results = {
-                "type": cancer_type,
-                "treatment": treatment
+                "type": prediction,  
+                "biomarkers": biomarkers,
+                "stage": tumor_stage
             }
             st.rerun()
 
+import re
+
+def parse_bloodtest(file):
+    """Robust parser for clinical blood tests with mixed formats"""
+    biomarkers = {
+        'ER': 0.0, 'PR': 0.0, 'HER2': 0.0,
+        'CA153': 0.0, 'EGFR': 0.0, 'KI67': 0.0,
+        'BRCA1': 0.0, 'BRCA2': 0.0, 'TP53': 0.0
+    }
+    
+    try:
+        content = file.read().decode().split('\n')
+        for line in content:
+            if ':' in line:
+                key_part, value_part = line.split(':', 1)
+                key = key_part.strip().upper()
+                value = value_part.strip()
+                
+                # Extract first numerical value using regex
+                match = re.search(r"[-+]?\d*\.?\d+", value)
+                if match:
+                    numerical_value = float(match.group())
+                    
+                    # Handle percentage conversion
+                    if '%' in value:
+                        numerical_value /= 100
+                else:
+                    # Handle textual statuses
+                    status_map = {'positive': 1.0, 'negative': 0.0}
+                    numerical_value = status_map.get(value.lower(), 0.0)
+                
+                # Map key variations
+                key = key.replace(' ', '').replace('-', '')
+                key_mappings = {
+                    'CA153': 'CA153', 'KI67': 'KI67',
+                    'MUC1': 'MUC1', 'CCND1': 'CCND1'
+                }
+                key = key_mappings.get(key, key)
+                
+                if key in biomarkers:
+                    biomarkers[key] = numerical_value
+                    
+    except Exception as e:
+        st.error(f"Error parsing file: {str(e)}")
+    
+    return biomarkers
+
+def predict_risk(age, gender, er_status, pr_status, her2_status, tumor_stage, histology, family_history):
+    """Mock ML prediction function - replace with actual model"""
+    # Convert inputs to match Kaggle dataset format
+    # Here you would typically:
+    # 1. Encode categorical variables
+    # 2. Load trained model
+    # 3. Make prediction
+    
+    # Example logic based on biomarkers
+    if er_status == "Positive" and pr_status == "Positive" and her2_status == "Negative":
+        return "Luminal A"
+    elif er_status == "Positive" and pr_status == "Positive" and her2_status == "Positive":
+        return "Luminal B"
+    elif er_status == "Negative" and pr_status == "Negative" and her2_status == "Positive":
+        return "HER2-enriched"
+    elif er_status == "Negative" and pr_status == "Negative" and her2_status == "Negative":
+        return "Triple Negative"
+    else:
+        return "Other Subtype"
 # GenAI Treatment Planner
 def generate_treatment_plan(cancer_type):
     openai.api_key = st.secrets["OPENAI_KEY"]
@@ -117,19 +210,43 @@ def process_bloodtest(file):
     s3.upload_fileobj(file, S3_BUCKET, s3_key)
     return s3_key
 
-# Main App Flow
-# if not st.session_state.authenticated:
-#     auth_page()
-# else:
-if 'results' in st.session_state:
-    st.title("Your Results 🧪")
-    st.subheader(f"Predicted Cancer Type: {st.session_state.results['type']}")
-    st.subheader("Personalized Treatment Plan")
-    st.markdown(st.session_state.results['treatment'])
+def safe_float(biomarkers, key):
+    """Type-safe float conversion with error handling"""
+    try:
+        return float(biomarkers.get(key, 0.0))
+    except (TypeError, ValueError):
+        return 0.0
         
-    if st.button("New Analysis"):
-        del st.session_state.results
-        st.rerun()
+# Main App 
+
+if 'results' in st.session_state:
+    st.title("Clinical Analysis Report")
+    
+    # Safely get values with fallbacks
+    er_value = safe_float(st.session_state.results['biomarkers'], 'ER')
+    her2_value = safe_float(st.session_state.results['biomarkers'], 'HER2')
+    ki67_value = safe_float(st.session_state.results['biomarkers'], 'KI67')
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.subheader("Key Biomarkers")
+        st.metric("ER Status", 
+                 f"{'Positive' if er_value > 1.0 else 'Negative'}",
+                 f"{er_value:.2f} fmol/mL")
+        st.metric("HER2 Status", 
+                 f"{'Positive' if her2_value > 15.0 else 'Negative'}",
+                 f"{her2_value:.2f} ng/mL")
+    
+    with col2:
+        st.subheader("Proliferation Markers")
+        st.metric("Ki-67 Index", 
+                 f"{ki67_value * 100:.1f}%",
+                 "High" if ki67_value > 0.2 else "Low")
+        st.metric("BRCA1 Mutation Risk",
+                 "High" if st.session_state.results['biomarkers']['BRCA1'] < 5.0 else "Low",
+                 f"{st.session_state.results['biomarkers']['BRCA1']:.1f} ng/mL")
+
 else:
     input_form()
 
