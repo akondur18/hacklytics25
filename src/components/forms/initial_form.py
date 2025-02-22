@@ -1,5 +1,3 @@
-# src/components/forms/initial_form.py
-
 import streamlit as st
 from datetime import datetime
 
