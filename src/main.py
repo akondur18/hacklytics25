@@ -121,7 +121,7 @@ def render_analysis_section():
             her2_status = st.selectbox("HER2 Status", ["Positive", "Negative"])
             tumor_stage = st.selectbox("Tumor Stage", ["I", "II", "III", "IV"])
             hist_grade = st.selectbox("Histological Grade", ["1", "2", "3"])
-            blood_file = st.file_uploader("Upload Blood Work Results (optional)", type=["pdf", "csv", "xlsx"])
+            # blood_file = st.file_uploader("Upload Blood Work Results (optional)", type=["pdf", "csv", "xlsx"])
         
         submitted = st.form_submit_button("Generate Analysis")
         
