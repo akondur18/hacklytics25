@@ -35,7 +35,13 @@ def predict_risk(age, gender, er_status, pr_status, her2_status, tumor_stage, hi
 def generate_treatment_plan(cancer_type, blood_file=None):
     """Generate AI-powered treatment recommendations."""
     try:
-        openai.api_key = st.secrets["OPENAI_KEY"]
+        # Check if OpenAI API key is configured
+        openai_key = st.secrets.get("OPENAI_KEY")
+        if not openai_key:
+            st.error("OpenAI API key not found in secrets. Please configure your .streamlit/secrets.toml file.")
+            return None
+            
+        openai.api_key = openai_key
         
         patient_data = {
             "cancer_type": cancer_type,
@@ -59,7 +65,8 @@ def generate_treatment_plan(cancer_type, blood_file=None):
         Note: Frame this as suggestions to discuss with healthcare providers.
         """
         
-        response = openai.ChatCompletion.create(
+        client = openai.OpenAI(api_key=openai_key)
+        response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
                 {
@@ -70,7 +77,7 @@ def generate_treatment_plan(cancer_type, blood_file=None):
             ]
         )
         
-        return response.choices[0].message["content"]
+        return response.choices[0].message.content
     except Exception as e:
         st.error("Error generating treatment plan. Please try again later.")
         print(f"Treatment plan generation error: {str(e)}")  # Replace with proper logging
