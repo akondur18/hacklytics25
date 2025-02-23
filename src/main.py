@@ -10,6 +10,8 @@ from components.forms.monthly_form import render_monthly_form
 from database.dynamo_ops import save_patient_info, save_monthly_tracking
 from utils.data_processing import validate_patient_data, validate_monthly_data
 from components.dashboard import display_patient_history
+import subprocess
+import argparse     
 
 # Initialize session state
 if 'authenticated' not in st.session_state:
@@ -155,7 +157,18 @@ def render_analysis_section():
                             st.error("Error saving analysis results")
                             print(f"Database error: {str(e)}")  # Replace with proper logging
 
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--cancer_type', type=str, 
+                      help='Predicted histology from optimize_model.py')
+    return parser.parse_known_args()[0] 
+
+
 def main():
+    args = parse_args()
+    if args.cancer_type:
+        st.session_state.predicted_cancer_type = args.cancer_type
+
     st.set_page_config(
         page_title="BRCA Care Portal",
         page_icon="🩺",
@@ -233,6 +246,9 @@ def main():
             st.warning("Please complete the initial form first.")
         else:
             display_patient_history()
+
+      
+            
 
 if __name__ == "__main__":
     main()
