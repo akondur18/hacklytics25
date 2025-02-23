@@ -1,0 +1,29 @@
+# Sample Blood Test - Protein Biomarkers
+# Patient ID: 123456
+# Date: 2025-07-14
+
+# Tumor Markers & Proteins:
+
+HER2: 11.5 ng/mL (Reference: <15.0)
+CA 15-3: 25.2 U/mL (Reference: <30.0)
+CA 27-29: 33.8 U/mL (Reference: <38.0)
+EGFR: 6.3 ng/mL
+MUC1: 8.4 ng/mL
+BRCA1: 4.2 ng/mL
+BRCA2: 5.0 ng/mL
+TP53: 2.9 ng/mL
+Ki-67: 15.8%
+Cyclin D1: 10.2 ng/mL
+
+# Cell Fragments:
+
+Circulating Tumor DNA (ctDNA): Not Detected
+Circulating Tumor Cells (CTCs): 1 cell/7.5mL
+
+# Organ Function:
+
+BUN: 11 mg/dL (Reference: 7-20)
+Creatinine: 0.7 mg/dL (Reference: 0.6-1.2)
+ALT: 17 U/L (Reference: 7-56)
+AST: 16 U/L (Reference: 10-40)
+Alkaline Phosphatase: 73 U/L (Reference: 44-147)
