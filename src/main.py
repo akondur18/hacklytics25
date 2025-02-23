@@ -83,6 +83,27 @@ def generate_treatment_plan(cancer_type, blood_file=None):
         print(f"Treatment plan generation error: {str(e)}")  # Replace with proper logging
         return None
 
+def save_analysis_results(patient_id, cancer_type, treatment_plan):
+    """Save analysis results to the database."""
+    try:
+        # Initialize DynamoDB client
+        dynamodb = boto3.resource('dynamodb')
+        table = dynamodb.Table('PatientAnalysis')
+        
+        # Prepare analysis data
+        analysis_data = {
+            'patient_id': patient_id,
+            'timestamp': datetime.now().isoformat(),
+            'cancer_type': cancer_type,
+            'treatment_plan': treatment_plan
+        }
+        
+        # Save to DynamoDB
+        table.put_item(Item=analysis_data)
+        
+    except Exception as e:
+        raise Exception(f"Error saving analysis results: {str(e)}")
+
 def render_analysis_section():
     """Render the analysis and treatment recommendation section."""
     st.header("Analysis & Recommendations")
@@ -140,38 +161,73 @@ def main():
         page_icon="🩺",
         layout="wide"
     )
-    
+
+    st.markdown("""
+    <style>
+        .stApp {
+            background-color: #FFDBE0;
+        }
+        
+        /* For tabs */
+        .stTabs [data-baseweb="tab-list"] {
+            background-color: #FFDBE0;
+        }
+        .stTabs [data-baseweb="tab"] {
+            background-color: #FFDBE0;
+        }
+        
+        /* For sidebar */
+        .css-1d391kg {
+            background-color: #FFDBE0;
+        }
+        
+        /* For content area */
+        .block-container {
+            background-color: #FFDBE0;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+
     # Check authentication
     if not st.session_state.authenticated:
         render_auth_page()
         return
-    
+
     # Sidebar navigation
     st.sidebar.title("Navigation")
     page = st.sidebar.radio(
         "Go to",
-        ["Initial Form", "Monthly Tracking", "Analysis & Recommendations", "View History"],
+        ["Initial Form", "Monthly Tracking", "Analysis", "View History"],
         disabled=not st.session_state.authenticated
     )
-    
+
     if page == "Initial Form":
         if not st.session_state.initial_form_submitted:
             render_initial_form()
         else:
-            st.info("Initial form already submitted. You can proceed to other sections.")
-            
+            st.info("Initial form already submitted. You can proceed to monthly tracking.")
+            if st.button("View Monthly Tracking"):
+                st.session_state.page = "Monthly Tracking"
+                st.rerun()
+
     elif page == "Monthly Tracking":
         if not st.session_state.initial_form_submitted:
             st.warning("Please complete the initial form first.")
+            if st.button("Go to Initial Form"):
+                st.session_state.page = "Initial Form"
+                st.rerun()
         else:
             render_monthly_form()
-            
-    elif page == "Analysis & Recommendations":
+
+    elif page == "Analysis":
         if not st.session_state.initial_form_submitted:
             st.warning("Please complete the initial form first.")
+            if st.button("Go to Initial Form"):
+                st.session_state.page = "Initial Form"
+                st.rerun()
         else:
             render_analysis_section()
-            
+
     elif page == "View History":
         if not st.session_state.initial_form_submitted:
             st.warning("Please complete the initial form first.")
