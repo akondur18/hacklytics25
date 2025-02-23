@@ -7,7 +7,6 @@ import plotly.graph_objects as go
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-# Initialize session state
 if 'authenticated' not in st.session_state:
     st.session_state.authenticated = False
 if 'patient_info' not in st.session_state:
@@ -28,7 +27,6 @@ def plot_biomarker_trends(data):
     df = pd.DataFrame(data)
     df['date'] = pd.to_datetime(df['date'])
     
-    # Create Plotly figure for interactive visualization
     fig = go.Figure()
     for column in ['ER', 'PR', 'HER2', 'KI67']:
         fig.add_trace(go.Scatter(
@@ -67,7 +65,6 @@ def display_patient_history():
     patient_info = st.session_state.get('patient_info', {})
     monthly_submissions = st.session_state.get('monthly_submissions', [])
     
-    # Display Patient Info
     st.header("Patient Information")
     col1, col2, col3 = st.columns(3)
     with col1:
@@ -83,7 +80,6 @@ def display_patient_history():
         df['visit_date'] = pd.to_datetime(df['visit_date'])
         df = df.sort_values('visit_date')
         
-        # Create tabs for different visualizations
         tab1, tab2, tab3, tab4 = st.tabs([
             "Pain & Fatigue Tracking", 
             "Biomarker Status", 
@@ -108,11 +104,9 @@ def display_patient_history():
         with tab2:
             st.subheader("Biomarker Status History")
             
-            # Create a table for biomarker status
             biomarker_df = df[['visit_date', 'er_status', 'pr_status', 'her2_status']]
             st.dataframe(biomarker_df)
             
-            # Create pie charts for latest status
             latest = df.iloc[-1]
             col1, col2, col3 = st.columns(3)
             
@@ -145,7 +139,6 @@ def display_patient_history():
         with tab4:
             st.subheader("Export Patient Data")
             
-            # Date range selection
             col1, col2 = st.columns(2)
             with col1:
                 start_date = st.date_input(
@@ -158,7 +151,6 @@ def display_patient_history():
                     max(df['visit_date']).date() if not df.empty else datetime.now().date()
                 )
             
-            # Data selection
             st.subheader("Select Data to Export")
             export_options = st.multiselect(
                 "Choose data to include:",
@@ -166,11 +158,9 @@ def display_patient_history():
                 default=["Patient Information", "Biomarker Data", "Visit History", "Pain & Fatigue Tracking"]
             )
             
-            # Filter data based on date range
             mask = (df['visit_date'].dt.date >= start_date) & (df['visit_date'].dt.date <= end_date)
             filtered_df = df.loc[mask]
             
-            # Create different dataframes based on selection
             export_dfs = {}
             if "Patient Information" in export_options:
                 export_dfs["patient_info"] = pd.DataFrame([patient_info])
@@ -181,13 +171,11 @@ def display_patient_history():
             if "Pain & Fatigue Tracking" in export_options:
                 export_dfs["pain_fatigue"] = filtered_df[['visit_date', 'pain_level', 'fatigue_level']]
             
-            # Preview section
             st.subheader("Data Preview")
             for name, df_preview in export_dfs.items():
                 with st.expander(f"Preview {name}"):
                     st.dataframe(df_preview)
             
-            # Export format selection
             export_format = st.selectbox(
                 "Select export format:",
                 ["CSV", "Excel", "PDF Report"]
@@ -195,7 +183,6 @@ def display_patient_history():
             
             if st.button("Generate Export"):
                 if export_format == "CSV":
-                    # Export each selected dataset as a separate CSV
                     for name, df_export in export_dfs.items():
                         csv = df_export.to_csv(index=False)
                         st.download_button(
@@ -207,7 +194,6 @@ def display_patient_history():
                         )
                 
                 elif export_format == "Excel":
-                    # Create Excel file with multiple sheets
                     buffer = io.BytesIO()
                     with pd.ExcelWriter(buffer) as writer:
                         for name, df_export in export_dfs.items():
@@ -220,19 +206,16 @@ def display_patient_history():
                         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                     )
                 
-                else:  # PDF Report
+                else: 
                     st.info("Generating PDF report... (This feature would require additional PDF generation library)")
-                    # Here you could add actual PDF generation using libraries like ReportLab or PyFPDF
+                    # add PDF generation using libraries like ReportLab or PyFPDF
             
            
-
 def main():
     st.title("Comprehensive Patient Dashboard 🏥")
     
-    # Fetch biomarker data
     biomarker_data = fetch_mock_biomarker_data()
     
-    # Create tabs for main dashboard sections
     tab1, tab2 = st.tabs(["Biomarker Analysis", "Patient History"])
     
     with tab1:

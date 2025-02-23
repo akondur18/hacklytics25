@@ -21,23 +21,19 @@ def render_monthly_form():
     st.title("Monthly Health Tracking 🏥")
     
     with st.form(key="monthly_health_tracking"):
-        # Visit Information
         st.header("Visit Information")
         
         visit_date = st.date_input("Visit Date")
         provider_name = st.text_input("Healthcare Provider Name")
         facility_name = st.text_input("Facility Name")
         
-        # Health Status
         st.header("Current Health Status")
         
         pain_level = st.slider("Pain Level (0-10)", 0, 10, 0)
         fatigue_level = st.slider("Fatigue Level (0-10)", 0, 10, 0)
         
-        # Clinical Information
         st.header("Clinical Information")
         
-        # Blood Test CSV Upload
         st.subheader("Blood Test Results")
         blood_test_file = st.file_uploader(
             "Upload Blood Test Results (TXT)", 
@@ -45,7 +41,6 @@ def render_monthly_form():
             help="Upload a text file containing your blood test results"
         )
         
-        # Preview blood test data if uploaded
         blood_test_data = None
         if blood_test_file is not None:
             blood_test_data = process_blood_test_file(blood_test_file)
@@ -57,10 +52,8 @@ def render_monthly_form():
         pr_status = st.radio("PR Status", ["Positive", "Negative", "Not Tested"])
         her2_status = st.radio("HER2 Status", ["Positive", "Negative", "Not Tested"])
         
-        # Additional Notes
         notes = st.text_area("Additional Notes or Concerns")
         
-        # Submit button
         submit_button = st.form_submit_button("Submit Monthly Update")
         
         if submit_button:
@@ -68,7 +61,6 @@ def render_monthly_form():
                 st.error("Please fill in all required fields")
                 return None
             
-            # Store the data
             monthly_data = {
                 "visit_date": str(visit_date),
                 "provider_name": provider_name,
@@ -82,18 +74,14 @@ def render_monthly_form():
                 "submission_date": datetime.now().isoformat()
             }
             
-            # Add blood test data if available
             if blood_test_data:
                 monthly_data["blood_test_results"] = blood_test_data
             
-            # Initialize monthly_submissions in session state if it doesn't exist
             if 'monthly_submissions' not in st.session_state:
                 st.session_state.monthly_submissions = []
             
-            # Add new submission to the list
             st.session_state.monthly_submissions.append(monthly_data)
             
-            # Update last submission date
             st.session_state.last_monthly_submission = str(visit_date)
             
             st.success("Monthly tracking information saved successfully!")

@@ -11,7 +11,6 @@ from database.dynamo_ops import save_patient_info, save_monthly_tracking
 from utils.data_processing import validate_patient_data, validate_monthly_data
 from components.dashboard import display_patient_history
 
-# Initialize session state
 if 'authenticated' not in st.session_state:
     st.session_state.authenticated = False
 if 'initial_form_submitted' not in st.session_state:
@@ -35,7 +34,7 @@ def predict_risk(age, gender, er_status, pr_status, her2_status, tumor_stage, hi
 def generate_treatment_plan(cancer_type, blood_file=None):
     """Generate AI-powered treatment recommendations."""
     try:
-        # Check if OpenAI API key is configured
+        # checks if OpenAI API key is configured
         openai_key = st.secrets.get("OPENAI_KEY")
         if not openai_key:
             st.error("OpenAI API key not found in secrets. Please configure your .streamlit/secrets.toml file.")
@@ -80,17 +79,16 @@ def generate_treatment_plan(cancer_type, blood_file=None):
         return response.choices[0].message.content
     except Exception as e:
         st.error("Error generating treatment plan. Please try again later.")
-        print(f"Treatment plan generation error: {str(e)}")  # Replace with proper logging
+        print(f"Treatment plan generation error: {str(e)}")  
         return None
 
 def save_analysis_results(patient_id, cancer_type, treatment_plan):
     """Save analysis results to the database."""
     try:
-        # Initialize DynamoDB client
+        # initialized DynamoDB client
         dynamodb = boto3.resource('dynamodb')
         table = dynamodb.Table('PatientAnalysis')
         
-        # Prepare analysis data
         analysis_data = {
             'patient_id': patient_id,
             'timestamp': datetime.now().isoformat(),
@@ -98,7 +96,6 @@ def save_analysis_results(patient_id, cancer_type, treatment_plan):
             'treatment_plan': treatment_plan
         }
         
-        # Save to DynamoDB
         table.put_item(Item=analysis_data)
         
     except Exception as e:
@@ -127,7 +124,6 @@ def render_analysis_section():
         
         if submitted:
             with st.spinner("Analyzing data and generating recommendations..."):
-                # Predict cancer subtype
                 cancer_type = predict_risk(
                     age, gender, er_status, pr_status, 
                     her2_status, tumor_stage, hist_grade
@@ -136,13 +132,12 @@ def render_analysis_section():
                 st.subheader("Predicted Cancer Subtype")
                 st.write(cancer_type)
                 
-                # Generate treatment plan
+                # generates the breast cancer treatment plan
                 treatment_plan = generate_treatment_plan(cancer_type, blood_file)
                 if treatment_plan:
                     st.subheader("AI-Generated Treatment Recommendations")
                     st.write(treatment_plan)
                     
-                    # Save analysis to database
                     if st.session_state.patient_id:
                         try:
                             save_analysis_results(
@@ -153,7 +148,7 @@ def render_analysis_section():
                             st.success("Analysis results saved successfully")
                         except Exception as e:
                             st.error("Error saving analysis results")
-                            print(f"Database error: {str(e)}")  # Replace with proper logging
+                            print(f"Database error: {str(e)}")  
 
 def main():
     st.set_page_config(
@@ -188,12 +183,10 @@ def main():
     </style>
     """, unsafe_allow_html=True)
 
-    # Check authentication
     if not st.session_state.authenticated:
         render_auth_page()
         return
 
-    # Sidebar navigation
     st.sidebar.title("Navigation")
     page = st.sidebar.radio(
         "Go to",

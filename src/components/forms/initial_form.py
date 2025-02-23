@@ -9,15 +9,14 @@ def render_initial_form():
     st.title("Initial Patient Information 📋")
     
     with st.form(key="initial_patient_info"):
-        # Personal Information Section
         st.header("Personal Information")
         
-        # Basic Information
+        # basic information
         name = st.text_input("Full Name")
         email = st.text_input("Email Address")
         phone = st.text_input("Phone Number")
         
-        # Medical Information
+        # medical information
         st.header("Medical Information")
         diagnosis_type = st.selectbox(
             "Initial Diagnosis Type",
@@ -26,7 +25,6 @@ def render_initial_form():
         
         family_history = st.checkbox("Family History of Breast Cancer")
         
-        # Submit button must be the last item in the form
         submit_button = st.form_submit_button("Submit Information")
 
         if submit_button:
@@ -34,7 +32,6 @@ def render_initial_form():
                 st.error("Please fill in all required fields")
                 return False
             
-            # Store the data in session state
             st.session_state.patient_info = {
                 "name": name,
                 "email": email,

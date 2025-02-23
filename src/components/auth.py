@@ -7,10 +7,8 @@ import boto3
 import os
 from dotenv import load_dotenv
 
-# Load environment variables
 load_dotenv()
 
-# Initialize DynamoDB resource
 dynamodb = boto3.resource(
     'dynamodb',
     aws_access_key_id=os.getenv('AWS_ACCESS_KEY'),
@@ -57,7 +55,6 @@ def render_auth_page():
                 else:
                     st.error("Registration failed. Email might already be registered.")
 
-# Remove AWS dependencies for now
 def verify_credentials(email, password):
     return True
 
